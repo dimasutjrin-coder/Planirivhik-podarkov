@@ -1,4 +1,7 @@
 // Счётчик и фильтр реализованы через updateStats() и filterGifts()
+// Статус «куплен» реализован через функцию toggleBought()
+// Добавление подарка реализовано через функцию addGift()
+ 
 function addGift() {
   const giftInput = document.getElementById('giftInput');
   const recipientInput = document.getElementById('recipientInput');
