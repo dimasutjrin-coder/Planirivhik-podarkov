@@ -10,7 +10,7 @@ body {
   background: #ffffff;
   padding: 24px;
   border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
  
 h1 {
@@ -21,7 +21,7 @@ h1 {
 .input-section {
   display: flex;
   gap: 10px;
-  margin-bottom: 24px;
+  margin-bottom: 16px;
   flex-wrap: wrap;
 }
  
@@ -48,6 +48,27 @@ button:hover {
   background: #2b6cb0;
 }
  
+.stats {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  font-size: 14px;
+  color: #4a5568;
+}
+ 
+.stats button {
+  padding: 6px 12px;
+  font-size: 13px;
+  background: #edf2f7;
+  color: #2d3748;
+}
+ 
+.stats button:hover {
+  background: #e2e8f0;
+}
+ 
 li {
   display: flex;
   justify-content: space-between;
@@ -66,4 +87,16 @@ li {
   color: #718096;
   font-size: 13px;
 }
-
+ 
+li.bought .gift-name {
+  text-decoration: line-through;
+  color: #a0aec0;
+}
+ 
+.btn-bought {
+  background: #38a169;
+}
+ 
+.btn-bought:hover {
+  background: #2f855a;
+}
