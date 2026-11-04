@@ -1,3 +1,4 @@
+// Статус «куплен» реализован через функцию toggleBought()
 function addGift() {
   const giftInput = document.getElementById('giftInput');
   const recipientInput = document.getElementById('recipientInput');
