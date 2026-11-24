@@ -1,0 +1,35 @@
+@startuml Event_Reminders_Sequence
+' Сценарий 4: напоминания о событиях (фоновый планировщик)
+' Рендер: plantuml -tpng event_reminders_sequence.puml
+
+title Напоминания о событиях
+
+actor "Планировщик" as Cron
+participant "Сервис напоминаний" as ReminderService
+participant "База данных" as DB
+participant "Сервис уведомлений" as NotificationService
+participant "Почтовый сервис" as Mail
+
+Cron -> ReminderService: tick()
+ReminderService -> DB: SELECT * FROM reminders\nWHERE is_sent = 0\n  AND remind_at <= datetime('now')
+DB --> ReminderService: due_reminders (3)
+
+loop для каждого напоминания
+  ReminderService -> DB: SELECT title, event_date\nFROM v_upcoming_events\nWHERE user_id = ?
+  DB --> ReminderService: event_context
+
+  alt channel = 'email'
+    ReminderService -> NotificationService: sendEmail(user_id, title)
+    NotificationService -> Mail: SMTP: письмо с напоминанием
+    Mail --> NotificationService: 250 OK
+    NotificationService --> ReminderService: delivered
+  else channel = 'in_app'
+    ReminderService -> DB: INSERT INTO notifications\n(user_id, title, created_at)
+    DB --> ReminderService: notification_id
+  end
+
+  ReminderService -> DB: UPDATE reminders\nSET is_sent = 1, sent_at = datetime('now')\nWHERE reminder_id = ?
+  DB --> ReminderService: ok
+end
+
+@enduml
