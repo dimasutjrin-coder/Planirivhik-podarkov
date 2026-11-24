@@ -1,34 +1,71 @@
 name: CI - Code Validation
- 
+
 on:
   push:
     branches: [ main ]
   pull_request:
     branches: [ main ]
- 
+
 jobs:
   validate:
     runs-on: ubuntu-latest
- 
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
- 
+
     - name: Validate HTML structure
       run: |
         echo "Checking HTML file existence..."
         test -f index.html && echo "✓ index.html exists" || exit 1
- 
+
     - name: Validate CSS file
       run: |
         echo "Checking CSS file existence..."
         test -f style.css && echo "✓ style.css exists" || exit 1
- 
+
     - name: Validate JavaScript file
       run: |
         echo "Checking JS file existence..."
         test -f script.js && echo "✓ script.js exists" || exit 1
- 
+
     - name: Basic syntax check
       run: |
         echo "All basic validations passed! 🎉"
+
+  database:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Check SQL scripts exist
+      run: |
+        test -f database/schema.sql && echo "✓ database/schema.sql exists" || exit 1
+        test -f database/seed_data.sql && echo "✓ database/seed_data.sql exists" || exit 1
+        test -f database/normalization.md && echo "✓ database/normalization.md exists" || exit 1
+
+    - name: Apply schema and seed data
+      run: |
+        sqlite3 gifts.db < database/schema.sql
+        sqlite3 gifts.db < database/seed_data.sql
+        echo "✓ schema and seed applied"
+
+    - name: Check integrity and required tables
+      run: |
+        sqlite3 gifts.db "PRAGMA integrity_check;" | grep -q "^ok$"
+        sqlite3 gifts.db "PRAGMA foreign_key_check;" | wc -l | grep -q "^0$"
+        tables=$(sqlite3 gifts.db "SELECT count(*) FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%';")
+        test "$tables" -eq 9 && echo "✓ 9 tables created" || exit 1
+        views=$(sqlite3 gifts.db "SELECT count(*) FROM sqlite_master WHERE type='view';")
+        test "$views" -eq 3 && echo "✓ 3 views created" || exit 1
+        indexes=$(sqlite3 gifts.db "SELECT count(*) FROM sqlite_master WHERE type='index' AND name LIKE 'idx_%';")
+        test "$indexes" -ge 10 && echo "✓ $indexes indexes created" || exit 1
+        gifts=$(sqlite3 gifts.db "SELECT count(*) FROM gifts;")
+        test "$gifts" -eq 12 && echo "✓ seed data loaded ($gifts gifts)" || exit 1
+
+    - name: Check views return data
+      run: |
+        sqlite3 -header -column gifts.db "SELECT list_title, limit_amount, spent, remaining FROM v_budget_usage;"
+        sqlite3 gifts.db "SELECT count(*) FROM v_gift_details;" | grep -q "^12$" && echo "✓ v_gift_details returns 12 rows"
