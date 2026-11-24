@@ -1,0 +1,130 @@
+@startuml ER_GiftPlanner
+' ER-диаграмма базы данных «Планировщик подарков»
+' Схема приведена к 3NF. Полное обоснование — database/normalization.md
+' Рендер: plantuml -tpng docs/database/er_diagram.puml
+
+hide circle
+skinparam linetype ortho
+skinparam shadowing false
+skinparam defaultFontName "Segoe UI"
+skinparam entity {
+  BackgroundColor #FFFFFF
+  BorderColor #6B8CB0
+  HeaderBackgroundColor #1F3A5F
+  HeaderFontColor #FFFFFF
+}
+
+entity "users" as users {
+  * user_id : INTEGER <<PK>>
+  --
+  username : TEXT <<UNIQUE>>
+  email : TEXT <<UNIQUE>>
+  password_hash : TEXT
+  created_at : TEXT
+}
+
+entity "recipients" as recipients {
+  * recipient_id : INTEGER <<PK>>
+  --
+  * user_id : INTEGER <<FK>>
+  name : TEXT
+  relation : TEXT
+  birth_date : TEXT
+  interests : TEXT
+  notes : TEXT
+  created_at : TEXT
+}
+
+entity "gift_lists" as gift_lists {
+  * list_id : INTEGER <<PK>>
+  --
+  * user_id : INTEGER <<FK>>
+  title : TEXT
+  description : TEXT
+  event_date : TEXT
+  is_archived : INTEGER
+  created_at : TEXT
+}
+
+entity "categories" as categories {
+  * category_id : INTEGER <<PK>>
+  --
+  name : TEXT <<UNIQUE>>
+  description : TEXT
+  color : TEXT
+  icon : TEXT
+}
+
+entity "tags" as tags {
+  * tag_id : INTEGER <<PK>>
+  --
+  name : TEXT <<UNIQUE>>
+  color : TEXT
+}
+
+entity "gifts" as gifts {
+  * gift_id : INTEGER <<PK>>
+  --
+  * user_id : INTEGER <<FK>>
+  list_id : INTEGER <<FK>>
+  recipient_id : INTEGER <<FK>>
+  category_id : INTEGER <<FK>>
+  title : TEXT
+  description : TEXT
+  price : REAL
+  currency : TEXT
+  status : TEXT
+  priority : TEXT
+  purchase_url : TEXT
+  due_date : TEXT
+  bought_at : TEXT
+  created_at : TEXT
+  updated_at : TEXT
+}
+
+entity "gift_tags" as gift_tags {
+  * gift_id : INTEGER <<PK,FK>>
+  * tag_id : INTEGER <<PK,FK>>
+  --
+  added_at : TEXT
+}
+
+entity "budgets" as budgets {
+  * budget_id : INTEGER <<PK>>
+  --
+  * list_id : INTEGER <<FK>>
+  period : TEXT
+  limit_amount : REAL
+  currency : TEXT
+  created_at : TEXT
+}
+
+entity "reminders" as reminders {
+  * reminder_id : INTEGER <<PK>>
+  --
+  * user_id : INTEGER <<FK>>
+  gift_id : INTEGER <<FK>>
+  list_id : INTEGER <<FK>>
+  title : TEXT
+  remind_at : TEXT
+  days_before : INTEGER
+  channel : TEXT
+  is_sent : INTEGER
+  sent_at : TEXT
+  created_at : TEXT
+}
+
+users ||--o{ recipients : владеет
+users ||--o{ gift_lists : ведёт
+users ||--o{ gifts : владеет
+users ||--o{ reminders : настраивает
+gift_lists |o--o{ gifts : содержит
+recipients |o--o{ gifts : получает
+categories |o--o{ gifts : классифицирует
+gifts ||--o{ gift_tags : имеет
+tags ||--o{ gift_tags : помечает
+gift_lists ||--o{ budgets : лимитирует
+gifts |o--o{ reminders : напоминает
+gift_lists |o--o{ reminders : напоминает
+
+@enduml
