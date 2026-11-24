@@ -1,0 +1,32 @@
+@startuml Filter_Gifts_Sequence
+' Сценарий 3: поиск и фильтрация подарков
+' Рендер: plantuml -tpng filter_gifts_sequence.puml
+
+title Поиск и фильтрация подарков
+
+actor "Пользователь" as User
+participant "Интерфейс" as UI
+participant "API-контроллер" as Controller
+participant "Сервис подарков" as GiftService
+participant "База данных" as DB
+
+User -> UI: Вводит «набор» и выбирает\nкатегорию, статус, получателя
+UI -> UI: debounce 300 мс
+UI -> Controller: GET /api/gifts?q=набор&category=5\n&status=desired&recipient=1
+Controller -> GiftService: searchGifts(user_id, filters)
+GiftService -> GiftService: buildQuery(filters)
+GiftService -> DB: SELECT g.*, r.name\nFROM gifts g\nLEFT JOIN recipients r ON ...\nWHERE g.user_id = 1\n  AND g.title LIKE '%набор%'
+DB --> GiftService: rows (2)
+GiftService -> GiftService: sortByPriority(rows)
+
+alt rows не пуст
+  GiftService --> Controller: GiftListResponse(items, total=2)
+  Controller --> UI: 200 OK\n{items, total, applied_filters}
+  UI -> User: Перерисовывает список\nи счётчики найденного
+else rows пуст
+  GiftService --> Controller: GiftListResponse([], total=0)
+  Controller --> UI: 200 OK\n{items: [], total: 0}
+  UI -> User: Показывает «Ничего не найдено»\nи кнопку сброса фильтров
+end
+
+@enduml

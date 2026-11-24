@@ -1,0 +1,32 @@
+@startuml Add_Gift_Sequence
+' Сценарий 1: добавление подарка
+' Рендер: plantuml -tpng add_gift_sequence.puml
+
+title Добавление подарка
+
+actor "Пользователь" as User
+participant "Интерфейс" as UI
+participant "API-контроллер" as Controller
+participant "Сервис подарков" as GiftService
+participant "База данных" as DB
+
+User -> UI: Заполняет форму подарка\n(название, получатель, цена)
+UI -> Controller: POST /api/gifts\n{title, recipient_id, price}
+Controller -> GiftService: createGift(data)
+GiftService -> GiftService: validateGift(data)
+
+alt Данные валидны
+  GiftService -> DB: INSERT INTO gifts\n(user_id, title, price, status, priority)
+  DB --> GiftService: gift_id = 13
+  GiftService -> DB: SELECT limit_amount, spent\nFROM v_budget_usage
+  DB --> GiftService: budget_remaining
+  GiftService --> Controller: GiftResponse(gift_id, budget_warning)
+  Controller --> UI: 201 Created\n{gift_id, budget_warning}
+  UI -> User: Показывает карточку\nв списке подарков
+else Данные невалидны
+  GiftService --> Controller: ValidationError(errors)
+  Controller --> UI: 400 Bad Request\n{errors}
+  UI -> User: Подсвечивает поля формы
+end
+
+@enduml
