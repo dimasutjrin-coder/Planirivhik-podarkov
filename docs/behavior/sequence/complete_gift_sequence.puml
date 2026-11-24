@@ -1,6 +1,6 @@
 @startuml Complete_Gift_Sequence
 ' Сценарий 2: отметка подарка как купленного
-' Рендер: plantuml -tpng complete_gift_sequence.puml
+' Рендер: plantuml -tpng -tsvg complete_gift_sequence.puml
 
 title Отметка подарка как купленного
 
@@ -12,26 +12,43 @@ participant "База данных" as DB
 participant "Сервис уведомлений" as NotificationService
 
 User -> UI: Ставит галочку «куплено»
-UI -> Controller: PATCH /api/gifts/7\n{status: "bought"}
-Controller -> GiftService: markAsBought(gift_id = 7)
-GiftService -> DB: UPDATE gifts SET status='bought',\nbought_at=datetime('now')\nWHERE gift_id = 7
-DB --> GiftService: rows_affected = 1
+activate User
+activate UI
+UI -> Controller: PATCH /api/gifts/{id}\n{status: "bought"}
+activate Controller
+Controller -> GiftService: markAsBought(gift_id)
+activate GiftService
+GiftService -> DB: UPDATE gifts\nSET status = 'bought',\nbought_at = datetime('now')\nWHERE gift_id = ?
+activate DB
+DB --> GiftService: rows_affected
+deactivate DB
 GiftService -> GiftService: checkListCompleted(list_id)
 
 alt rows_affected = 1
-  GiftService -> DB: SELECT COUNT(*) FROM gifts\nWHERE list_id = 1 AND status <> 'given'
-  DB --> GiftService: open_items = 0
+  GiftService -> DB: SELECT COUNT(*) FROM gifts\nWHERE list_id = ? AND status <> 'given'
+  activate DB
+  DB --> GiftService: open_items
+  deactivate DB
   opt все подарки списка закрыты
-    GiftService -> NotificationService: notifyListCompleted(list_id = 1)
+    GiftService -> NotificationService: notifyListCompleted(list_id)
+    activate NotificationService
     NotificationService --> GiftService: notification_id
+    deactivate NotificationService
   end
   GiftService --> Controller: GiftUpdated(status='bought')
+  deactivate GiftService
   Controller --> UI: 200 OK\n{gift_id, status, bought_at}
-  UI -> User: Зачёркивает подарок,\nобновляет счётчики
+  deactivate Controller
+  UI -> UI: Зачеркнуть подарок, обновить счётчики
+  UI --> User: Показать анимацию выполнения
 else rows_affected = 0
   GiftService --> Controller: NotFoundError(gift_id)
+  deactivate GiftService
   Controller --> UI: 404 Not Found
-  UI -> User: Показывает сообщение об ошибке
+  deactivate Controller
+  UI --> User: Показать сообщение об ошибке
 end
 
+deactivate UI
+deactivate User
 @enduml

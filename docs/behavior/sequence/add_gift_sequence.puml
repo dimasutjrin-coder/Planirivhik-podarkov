@@ -1,6 +1,6 @@
 @startuml Add_Gift_Sequence
 ' Сценарий 1: добавление подарка
-' Рендер: plantuml -tpng add_gift_sequence.puml
+' Рендер: plantuml -tpng -tsvg add_gift_sequence.puml
 
 title Добавление подарка
 
@@ -11,22 +11,38 @@ participant "Сервис подарков" as GiftService
 participant "База данных" as DB
 
 User -> UI: Заполняет форму подарка\n(название, получатель, цена)
+activate User
+activate UI
 UI -> Controller: POST /api/gifts\n{title, recipient_id, price}
-Controller -> GiftService: createGift(data)
-GiftService -> GiftService: validateGift(data)
+activate Controller
+Controller -> GiftService: createGift(giftData)
+activate GiftService
+GiftService -> GiftService: validateGiftData(giftData)
 
 alt Данные валидны
   GiftService -> DB: INSERT INTO gifts\n(user_id, title, price, status, priority)
-  DB --> GiftService: gift_id = 13
+  activate DB
+  DB --> GiftService: gift_id
+  deactivate DB
   GiftService -> DB: SELECT limit_amount, spent\nFROM v_budget_usage
+  activate DB
   DB --> GiftService: budget_remaining
+  deactivate DB
   GiftService --> Controller: GiftResponse(gift_id, budget_warning)
+  deactivate GiftService
   Controller --> UI: 201 Created\n{gift_id, budget_warning}
-  UI -> User: Показывает карточку\nв списке подарков
+  deactivate Controller
+  UI -> UI: Показать уведомление "Подарок добавлен"
+  UI -> UI: Обновить список и счётчики
+  UI --> User: Отобразить новый подарок в списке
 else Данные невалидны
-  GiftService --> Controller: ValidationError(errors)
-  Controller --> UI: 400 Bad Request\n{errors}
-  UI -> User: Подсвечивает поля формы
+  GiftService --> Controller: ErrorResponse("Неверные данные")
+  deactivate GiftService
+  Controller --> UI: 400 Bad Request\n{error_message}
+  deactivate Controller
+  UI --> User: Показать ошибку валидации
 end
 
+deactivate UI
+deactivate User
 @enduml

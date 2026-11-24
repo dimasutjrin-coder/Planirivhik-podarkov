@@ -1,6 +1,6 @@
 @startuml Filter_Gifts_Sequence
 ' Сценарий 3: поиск и фильтрация подарков
-' Рендер: plantuml -tpng filter_gifts_sequence.puml
+' Рендер: plantuml -tpng -tsvg filter_gifts_sequence.puml
 
 title Поиск и фильтрация подарков
 
@@ -10,23 +10,36 @@ participant "API-контроллер" as Controller
 participant "Сервис подарков" as GiftService
 participant "База данных" as DB
 
-User -> UI: Вводит «набор» и выбирает\nкатегорию, статус, получателя
+User -> UI: Вводит запрос и выбирает\nфильтры (категория, статус, получатель)
+activate User
+activate UI
 UI -> UI: debounce 300 мс
 UI -> Controller: GET /api/gifts?q=набор&category=5\n&status=desired&recipient=1
+activate Controller
 Controller -> GiftService: searchGifts(user_id, filters)
+activate GiftService
 GiftService -> GiftService: buildQuery(filters)
 GiftService -> DB: SELECT g.*, r.name\nFROM gifts g\nLEFT JOIN recipients r ON ...\nWHERE g.user_id = 1\n  AND g.title LIKE '%набор%'
-DB --> GiftService: rows (2)
+activate DB
+DB --> GiftService: rows
+deactivate DB
 GiftService -> GiftService: sortByPriority(rows)
 
-alt rows не пуст
-  GiftService --> Controller: GiftListResponse(items, total=2)
+alt Результаты найдены
+  GiftService --> Controller: GiftListResponse(items, total)
+  deactivate GiftService
   Controller --> UI: 200 OK\n{items, total, applied_filters}
-  UI -> User: Перерисовывает список\nи счётчики найденного
-else rows пуст
+  deactivate Controller
+  UI -> UI: Перерисовать список и счётчики
+  UI --> User: Показать найденные подарки
+else Ничего не найдено
   GiftService --> Controller: GiftListResponse([], total=0)
+  deactivate GiftService
   Controller --> UI: 200 OK\n{items: [], total: 0}
-  UI -> User: Показывает «Ничего не найдено»\nи кнопку сброса фильтров
+  deactivate Controller
+  UI --> User: Показать «Ничего не найдено»\nи кнопку сброса фильтров
 end
 
+deactivate UI
+deactivate User
 @enduml

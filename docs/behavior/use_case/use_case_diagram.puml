@@ -1,4 +1,4 @@
-@startuml UseCase_GiftPlanner
+﻿@startuml UseCase_GiftPlanner
 ' Use Case диаграмма приложения «Планировщик подарков»
 ' Лабораторная работа 5. Рендер: plantuml -tpng use_case_diagram.puml
 
@@ -24,6 +24,9 @@ rectangle "Планировщик подарков" {
   usecase "Удалить подарок" as UC_Delete
   usecase "Отметить как купленный" as UC_Bought
   usecase "Просмотр списка подарков" as UC_View
+  usecase "Просмотр списка подарков" as UC_View
+  usecase "Поиск подарков" as UC_Search
+  usecase "Фильтрация и сортировка" as UC_Filter
   usecase "Управление получателями\nи списками" as UC_Manage
   usecase "Установка бюджета" as UC_Budget
   usecase "Напоминания о событиях" as UC_Remind
@@ -64,3 +67,4 @@ UC_Filter ..> UC_View : extend
 UC_Notify -- Mail
 
 @enduml
+

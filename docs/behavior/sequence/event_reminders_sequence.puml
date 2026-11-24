@@ -1,6 +1,6 @@
 @startuml Event_Reminders_Sequence
 ' Сценарий 4: напоминания о событиях (фоновый планировщик)
-' Рендер: plantuml -tpng event_reminders_sequence.puml
+' Рендер: plantuml -tpng -tsvg event_reminders_sequence.puml
 
 title Напоминания о событиях
 
@@ -10,26 +10,44 @@ participant "База данных" as DB
 participant "Сервис уведомлений" as NotificationService
 participant "Почтовый сервис" as Mail
 
+== Каждые 15 минут ==
 Cron -> ReminderService: tick()
+activate Cron
+activate ReminderService
 ReminderService -> DB: SELECT * FROM reminders\nWHERE is_sent = 0\n  AND remind_at <= datetime('now')
-DB --> ReminderService: due_reminders (3)
+activate DB
+DB --> ReminderService: due_reminders
+deactivate DB
 
+== Обработка напоминаний ==
 loop для каждого напоминания
   ReminderService -> DB: SELECT title, event_date\nFROM v_upcoming_events\nWHERE user_id = ?
+  activate DB
   DB --> ReminderService: event_context
+  deactivate DB
 
   alt channel = 'email'
     ReminderService -> NotificationService: sendEmail(user_id, title)
+    activate NotificationService
     NotificationService -> Mail: SMTP: письмо с напоминанием
+    activate Mail
     Mail --> NotificationService: 250 OK
+    deactivate Mail
     NotificationService --> ReminderService: delivered
+    deactivate NotificationService
   else channel = 'in_app'
     ReminderService -> DB: INSERT INTO notifications\n(user_id, title, created_at)
+    activate DB
     DB --> ReminderService: notification_id
+    deactivate DB
   end
 
   ReminderService -> DB: UPDATE reminders\nSET is_sent = 1, sent_at = datetime('now')\nWHERE reminder_id = ?
+  activate DB
   DB --> ReminderService: ok
+  deactivate DB
 end
 
+deactivate ReminderService
+deactivate Cron
 @enduml
