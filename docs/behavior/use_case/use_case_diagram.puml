@@ -1,0 +1,66 @@
+@startuml UseCase_GiftPlanner
+' Use Case диаграмма приложения «Планировщик подарков»
+' Лабораторная работа 5. Рендер: plantuml -tpng use_case_diagram.puml
+
+left to right direction
+skinparam shadowing false
+skinparam defaultFontName "Segoe UI"
+skinparam usecase {
+  BackgroundColor #E8F0FA
+  BorderColor #5B7FA6
+  FontColor #1A202C
+}
+skinparam rectangle {
+  BackgroundColor #F7FAFC
+  BorderColor #8FA3B8
+}
+
+actor "Пользователь" as User
+actor "Почтовый сервис" as Mail
+
+rectangle "Планировщик подарков" {
+  usecase "Добавить подарок" as UC_Add
+  usecase "Редактировать подарок" as UC_Edit
+  usecase "Удалить подарок" as UC_Delete
+  usecase "Отметить как купленный" as UC_Bought
+  usecase "Просмотр списка подарков" as UC_View
+  usecase "Управление получателями\nи списками" as UC_Manage
+  usecase "Установка бюджета" as UC_Budget
+  usecase "Напоминания о событиях" as UC_Remind
+  usecase "Просмотр статистики" as UC_Stats
+
+  usecase "Валидация данных" as UC_Validate
+  usecase "Сохранение изменений" as UC_Save
+  usecase "Поиск подарков" as UC_Search
+  usecase "Фильтрация и сортировка" as UC_Filter
+  usecase "Проверка бюджета" as UC_CheckBudget
+  usecase "Отправка уведомления" as UC_Notify
+}
+
+' --- ассоциации актора с вариантами использования ---
+User -- UC_Add
+User -- UC_Edit
+User -- UC_Delete
+User -- UC_Bought
+User -- UC_View
+User -- UC_Manage
+User -- UC_Budget
+User -- UC_Remind
+User -- UC_Stats
+
+' --- include: обязательное включение ---
+UC_Add ..> UC_Validate : include
+UC_Edit ..> UC_Validate : include
+UC_Edit ..> UC_Save : include
+UC_Delete ..> UC_Save : include
+UC_Budget ..> UC_CheckBudget : include
+UC_Remind ..> UC_Notify : include
+
+' --- extend: необязательное расширение ---
+UC_Search ..> UC_View : extend
+UC_Filter ..> UC_View : extend
+
+' --- внешний актор ---
+UC_Notify -- Mail
+
+@enduml
